@@ -1,0 +1,32 @@
+# site_prov/site_prov/ansible/roles/delete_site/tasks/main.yml
+---
+- name: Check if site exists
+  stat:
+    path: "{{ bench_path }}/sites/{{ site_name }}"
+  register: site_folder
+
+- name: Fail if site doesn't exist
+  fail:
+    msg: "Site {{ site_name }} does not exist"
+  when: not site_folder.stat.exists
+
+- name: Delete site
+  command:
+    chdir: "{{ bench_path }}"
+    cmd: "bench drop-site {{ site_name }} --force"
+  register: site_deletion
+
+- name: Remove nginx config
+  command:
+    chdir: "{{ bench_path }}"
+    cmd: "bench remove-domain {{ site_name }}"
+  when: site_deletion is success
+
+- name: Setup nginx
+  command:
+    chdir: "{{ bench_path }}"
+    cmd: "{{ item }}"
+  loop:
+    - "bench setup nginx --yes"
+    - "bench setup reload-nginx"
+  when: site_deletion is success

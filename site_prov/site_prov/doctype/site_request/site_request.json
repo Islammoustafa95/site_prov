@@ -1,0 +1,110 @@
+{
+    "actions": [],
+    "allow_rename": 0,
+    "creation": "2024-02-08 12:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "site_details_section",
+        "subdomain",
+        "plan",
+        "owner_email",
+        "col_break_1",
+        "status",
+        "creation_date",
+        "logs_section",
+        "installed_apps",
+        "creation_log"
+    ],
+    "fields": [
+        {
+            "fieldname": "site_details_section",
+            "fieldtype": "Section Break",
+            "label": "Site Details"
+        },
+        {
+            "fieldname": "subdomain",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Subdomain",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "fieldname": "plan",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Plan",
+            "options": "Site Plan",
+            "reqd": 1
+        },
+        {
+            "fieldname": "owner_email",
+            "fieldtype": "Data",
+            "label": "Owner Email",
+            "options": "Email",
+            "reqd": 1
+        },
+        {
+            "fieldname": "col_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "New",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Status",
+            "options": "New\nProcessing\nActive\nFailed",
+            "reqd": 1
+        },
+        {
+            "fieldname": "creation_date",
+            "fieldtype": "Datetime",
+            "label": "Creation Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "logs_section",
+            "fieldtype": "Section Break",
+            "label": "Logs & Status"
+        },
+        {
+            "fieldname": "installed_apps",
+            "fieldtype": "Small Text",
+            "label": "Installed Apps",
+            "read_only": 1
+        },
+        {
+            "fieldname": "creation_log",
+            "fieldtype": "Long Text",
+            "label": "Creation Log",
+            "read_only": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2024-02-08 12:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Site Prov",
+    "name": "Site Request",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+}

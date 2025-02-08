@@ -1,0 +1,99 @@
+<!-- site_prov/site_prov/www/create-site.html -->
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="container">
+    <h1>Create New Site</h1>
+    
+    <!-- Plan Selection -->
+    <div class="plan-comparison mb-5">
+        <div class="row">
+            {% for plan in plans %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ plan.plan_name }}</h3>
+                        <h4 class="text-muted">${{ plan.monthly_price }}/month</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if plan.description %}
+                        <p>{{ plan.description }}</p>
+                        {% endif %}
+                        <h5>Included Apps:</h5>
+                        <ul>
+                            {% for app in plan.apps %}
+                            <li>{{ app.app_name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary select-plan" data-plan="{{ plan.name }}">
+                            Select Plan
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Site Creation Form (hidden initially) -->
+    <div id="site-form" style="display: none;">
+        <h3>Create Your Site</h3>
+        <div class="form-group">
+            <label for="subdomain">Subdomain</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="subdomain" placeholder="yoursite">
+                <div class="input-group-append">
+                    <span class="input-group-text">.ventotech.co</span>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="selected-plan">
+        <button class="btn btn-primary mt-3" onclick="createSite()">Create Site</button>
+    </div>
+</div>
+
+<script>
+frappe.ready(function() {
+    // Handle plan selection
+    $('.select-plan').click(function() {
+        const plan = $(this).data('plan');
+        $('#selected-plan').val(plan);
+        $('#site-form').show();
+        $('html, body').animate({
+            scrollTop: $('#site-form').offset().top
+        }, 500);
+    });
+});
+
+function createSite() {
+    const subdomain = $('#subdomain').val();
+    const plan = $('#selected-plan').val();
+    
+    if (!subdomain) {
+        frappe.throw(__('Please enter a subdomain'));
+        return;
+    }
+
+    frappe.call({
+        method: 'site_prov.api.create_site',
+        args: {
+            subdomain: subdomain,
+            plan: plan
+        },
+        callback: function(r) {
+            if (r.message && r.message.status === 'success') {
+                frappe.show_alert({
+                    message: __('Site creation started. You will be notified once it is ready.'),
+                    indicator: 'green'
+                });
+                window.location.href = '/my-sites';
+            } else {
+                frappe.throw(r.message.message || 'Site creation failed');
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

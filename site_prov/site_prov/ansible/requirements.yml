@@ -1,0 +1,4 @@
+# site_prov/site_prov/ansible/requirements.yml
+---
+collections:
+  - community.mysql

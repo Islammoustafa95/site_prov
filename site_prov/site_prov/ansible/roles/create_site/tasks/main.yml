@@ -1,0 +1,24 @@
+# site_prov/site_prov/ansible/roles/create_site/tasks/main.yml
+---
+- name: Check if site exists
+  stat:
+    path: "{{ bench_path }}/sites/{{ site_name }}"
+  register: site_folder
+
+- name: Fail if site already exists
+  fail:
+    msg: "Site {{ site_name }} already exists"
+  when: site_folder.stat.exists
+
+- name: Create new site
+  command:
+    chdir: "{{ bench_path }}"
+    cmd: "bench new-site {{ site_name }} --admin-password {{ admin_password }} --mariadb-root-password {{ mysql_password }}"
+  register: site_creation
+  ignore_errors: no
+
+- name: Add site to current bench
+  command:
+    chdir: "{{ bench_path }}"
+    cmd: "bench use {{ site_name }}"
+  when: site_creation is success

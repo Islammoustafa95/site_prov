@@ -1,0 +1,28 @@
+# site_prov/site_prov/ansible/roles/remove_apps/tasks/main.yml
+---
+- name: Remove apps
+  block:
+    - name: Uninstall each app
+      command:
+        chdir: "{{ bench_path }}"
+        cmd: "bench --site {{ site_name }} uninstall-app {{ item }} --yes"
+      loop: "{{ apps_to_remove.split(',') }}"
+      register: app_removal
+
+    - name: Run migrations
+      command:
+        chdir: "{{ bench_path }}"
+        cmd: "bench --site {{ site_name }} migrate"
+      when: app_removal is success
+
+    - name: Clear cache
+      command:
+        chdir: "{{ bench_path }}"
+        cmd: "bench --site {{ site_name }} clear-cache"
+      when: app_removal is success
+
+  rescue:
+    - name: Log error
+      debug:
+        msg: "Failed to remove apps: {{ app_removal }}"
+      failed_when: true

@@ -1,0 +1,173 @@
+<!-- site_prov/site_prov/www/my-sites.html -->
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="container">
+    <h1>My Sites</h1>
+    
+    {% if not sites %}
+    <div class="alert alert-info">
+        You don't have any sites yet. <a href="/create-site">Create your first site</a>
+    </div>
+    {% else %}
+    <div class="row">
+        {% for site in sites %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ site.subdomain }}.ventotech.co</h3>
+                    <span class="badge badge-{{ 'success' if site.status == 'Active' else 'warning' }}">
+                        {{ site.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p><strong>Plan:</strong> {{ site.plan }}</p>
+                    <p><strong>Created:</strong> {{ frappe.utils.format_datetime(site.creation_date, "medium") }}</p>
+                    {% if site.installed_apps %}
+                    <p><strong>Installed Apps:</strong> {{ site.installed_apps }}</p>
+                    {% endif %}
+                    
+                    {% if site.status == 'Active' %}
+                    <div class="btn-group mt-3">
+                        <button class="btn btn-info btn-sm" onclick="showUpgradeOptions('{{ site.name }}', '{{ site.plan }}')">
+                            Upgrade
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="showDowngradeOptions('{{ site.name }}', '{{ site.plan }}')">
+                            Downgrade
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSite('{{ site.name }}', '{{ site.subdomain }}')">
+                            Delete
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Plan Change Modal -->
+<div class="modal" id="planChangeModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Plan</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="planOptions"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUpgradeOptions(siteName, currentPlan) {
+    const plans = {{ frappe.as_json(plans) | safe }};
+    const upgradePlans = plans.filter(p => p.monthly_price > plans.find(cp => cp.name === currentPlan).monthly_price);
+    
+    if (!upgradePlans.length) {
+        frappe.show_alert({
+            message: 'You are already on the highest plan',
+            indicator: 'red'
+        });
+        return;
+    }
+    
+    showPlanOptions(siteName, upgradePlans, 'upgrade');
+}
+
+function showDowngradeOptions(siteName, currentPlan) {
+    const plans = {{ frappe.as_json(plans) | safe }};
+    const downgradePlans = plans.filter(p => p.monthly_price < plans.find(cp => cp.name === currentPlan).monthly_price);
+    
+    if (!downgradePlans.length) {
+        frappe.show_alert({
+            message: 'You are already on the lowest plan',
+            indicator: 'red'
+        });
+        return;
+    }
+    
+    showPlanOptions(siteName, downgradePlans, 'downgrade');
+}
+
+function showPlanOptions(siteName, plans, action) {
+    const planHtml = plans.map(plan => `
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="radio" name="plan" value="${plan.name}" id="plan-${plan.name}">
+            <label class="form-check-label" for="plan-${plan.name}">
+                ${plan.plan_name} - $${plan.monthly_price}/month
+            </label>
+        </div>
+    `).join('');
+    
+    $('#planOptions').html(`
+        ${planHtml}
+        <button class="btn btn-primary mt-3" onclick="changePlan('${siteName}', '${action}')">
+            Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}
+        </button>
+    `);
+    
+    $('#planChangeModal').modal('show');
+}
+
+function changePlan(siteName, action) {
+    const newPlan = $('input[name="plan"]:checked').val();
+    if (!newPlan) {
+        frappe.throw(__('Please select a plan'));
+        return;
+    }
+    
+    frappe.call({
+        method: 'site_prov.api.change_plan',
+        args: {
+            site_request: siteName,
+            new_plan: newPlan,
+            action: action
+        },
+        callback: function(r) {
+            if (r.message && r.message.status === 'success') {
+                $('#planChangeModal').modal('hide');
+                frappe.show_alert({
+                    message: __('Plan change initiated'),
+                    indicator: 'green'
+                });
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                frappe.throw(r.message.message || __('Plan change failed'));
+            }
+        }
+    });
+}
+
+function deleteSite(siteName, subdomain) {
+    frappe.confirm(
+        __(`Are you sure you want to delete ${subdomain}.ventotech.co? This action cannot be undone.`),
+        function() {
+            frappe.call({
+                method: 'site_prov.api.delete_site',
+                args: {
+                    site_request: siteName
+                },
+                callback: function(r) {
+                    if (r.message && r.message.status === 'success') {
+                        frappe.show_alert({
+                            message: __('Site deletion initiated'),
+                            indicator: 'green'
+                        });
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        frappe.throw(r.message.message || __('Site deletion failed'));
+                    }
+                }
+            });
+        }
+    );
+}
+</script>
+{% endblock %}

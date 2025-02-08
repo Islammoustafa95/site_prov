@@ -1,0 +1,44 @@
+# site_prov/site_prov/ansible/site_setup.yml
+---
+- name: Setup Frappe Site
+  hosts: localhost
+  become: no  # Since bench commands should run as frappe user
+  gather_facts: no
+
+  vars:
+    bench_path: "/home/frappe/frappe-bench"
+    apps:
+      Plan 1:
+        - erpnext
+      Plan 2:
+        - erpnext
+        - hrms
+      Plan 3:
+        - erpnext
+        - hrms
+        - helpdesk
+
+  tasks:
+    - name: Create new site
+      include_role:
+        name: create_site
+      when: site_name is defined and plan is defined
+      tags: ['create_site']
+
+    - name: Install apps
+      include_role:
+        name: install_apps
+      when: site_name is defined and (plan is defined or apps_to_install is defined)
+      tags: ['install_apps']
+
+    - name: Remove apps
+      include_role:
+        name: remove_apps
+      when: site_name is defined and apps_to_remove is defined
+      tags: ['remove_apps']
+
+    - name: Delete site
+      include_role:
+        name: delete_site
+      when: site_name is defined
+      tags: ['delete_site']
