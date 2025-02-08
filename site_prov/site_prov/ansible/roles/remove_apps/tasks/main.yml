@@ -1,4 +1,3 @@
-# site_prov/site_prov/ansible/roles/remove_apps/tasks/main.yml
 ---
 - name: Remove apps
   block:
@@ -20,9 +19,3 @@
         chdir: "{{ bench_path }}"
         cmd: "bench --site {{ site_name }} clear-cache"
       when: app_removal is success
-
-  rescue:
-    - name: Log error
-      debug:
-        msg: "Failed to remove apps: {{ app_removal }}"
-      failed_when: true

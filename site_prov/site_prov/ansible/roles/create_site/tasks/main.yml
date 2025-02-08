@@ -1,4 +1,3 @@
-# site_prov/site_prov/ansible/roles/create_site/tasks/main.yml
 ---
 - name: Check if site exists
   stat:

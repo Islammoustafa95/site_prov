@@ -1,9 +1,10 @@
-# site_prov/site_prov/ansible/site_setup.yml
+# site_prov/site_prov/site_prov/ansible/site_setup.yml
 ---
 - name: Setup Frappe Site
   hosts: localhost
-  become: no  # Since bench commands should run as frappe user
-  gather_facts: no
+  connection: local  # Add this line
+  become: no
+  gather_facts: yes  # Change to yes for debugging
 
   vars:
     bench_path: "/home/frappe/frappe-bench"
@@ -18,27 +19,30 @@
         - hrms
         - helpdesk
 
+  pre_tasks:
+    - name: Debug Variables
+      debug:
+        msg:
+          - "Site Name: {{ site_name }}"
+          - "Plan: {{ plan }}"
+          - "Bench Path: {{ bench_path }}"
+          - "Working Directory: {{ lookup('env', 'PWD') }}"
+
+    - name: Ensure bench path exists
+      stat:
+        path: "{{ bench_path }}"
+      register: bench_dir
+      
+    - name: Fail if bench path doesn't exist
+      fail:
+        msg: "Bench directory not found at {{ bench_path }}"
+      when: not bench_dir.stat.exists
+
   tasks:
     - name: Create new site
       include_role:
         name: create_site
+        apply:
+          tags: create_site
       when: site_name is defined and plan is defined
       tags: ['create_site']
-
-    - name: Install apps
-      include_role:
-        name: install_apps
-      when: site_name is defined and (plan is defined or apps_to_install is defined)
-      tags: ['install_apps']
-
-    - name: Remove apps
-      include_role:
-        name: remove_apps
-      when: site_name is defined and apps_to_remove is defined
-      tags: ['remove_apps']
-
-    - name: Delete site
-      include_role:
-        name: delete_site
-      when: site_name is defined
-      tags: ['delete_site']
