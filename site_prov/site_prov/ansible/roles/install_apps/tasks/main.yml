@@ -1,10 +1,16 @@
+# site_prov/site_prov/site_prov/ansible/roles/install_apps/tasks/main.yml
 ---
 - name: Get apps to install
   set_fact:
-    apps_list: "{{ apps[plan] if plan is defined else apps_to_install.split(',') }}"
+    apps_list: "{{ apps[plan] }}"
+  when: plan is defined
 
 - name: Install apps
   block:
+    - name: Show apps to install
+      debug:
+        msg: "Installing apps: {{ apps_list }}"
+
     - name: Install each app
       command:
         chdir: "{{ bench_path }}"
@@ -12,7 +18,7 @@
       loop: "{{ apps_list }}"
       register: app_install
 
-    - name: Run migrations
+    - name: Run migrations after apps install
       command:
         chdir: "{{ bench_path }}"
         cmd: "bench --site {{ site_name }} migrate"
@@ -23,3 +29,9 @@
         chdir: "{{ bench_path }}"
         cmd: "bench --site {{ site_name }} clear-cache"
       when: app_install is success
+
+  rescue:
+    - name: Log error
+      debug:
+        msg: "Failed to install apps: {{ app_install }}"
+      failed_when: true
